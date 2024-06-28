@@ -7,6 +7,7 @@ An application that ingests data from commonly used softwares in my life.
 - Spotify API
 
 ## Tech Stack (WIP - may add more in future pushes)
+- Infrastructure Management: Terraform
 - Load: Lambda/API Gateway
 - Store: S3
 - Transform: dbt
