@@ -23,9 +23,41 @@ assume_role_policy = <<EOF
 EOF
 }
 
+resource "aws_iam_policy" "lambda_s3_policy" {
+  name        = "lambda-s3-policy"
+  description = "IAM policy for Lambda to access S3 bucket"
+  policy      = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "s3:PutObject",
+          "s3:DeleteBucket"
+        ]
+        Effect = "Allow"
+        Resource = "${aws_s3_bucket.s3_bucket.arn}/*"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "attach_iam_policy_to_iam_role" {
  role        = aws_iam_role.lambda_role.name
  policy_arn  = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attachment" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_s3_policy.arn
+}
+
+resource "aws_lambda_permission" "apigw_lambda" {
+  statement_id = "AllowExecutionFromAPIGateway"
+  action = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.lambda_func.function_name
+  principal = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.api_metricnier.execution_arn}/*"
 }
 
 resource "aws_lambda_function" "lambda_func" {
@@ -142,13 +174,19 @@ resource "aws_api_gateway_deployment" "deployment" {
   rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
 }
 
-resource "aws_lambda_permission" "apigw_lambda" {
-  statement_id = "AllowExecutionFromAPIGateway"
-  action = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.lambda_func.function_name
-  principal = "apigateway.amazonaws.com"
+########################################################################################
+# S3 Bucket
+resource "aws_s3_bucket" "s3_bucket" {
+  bucket = "metricnier-bucket"
+}
 
-  source_arn = "${aws_api_gateway_rest_api.api_metricnier.execution_arn}/*"
+resource "aws_s3_bucket_public_access_block" "s3_bucket" {
+  bucket = aws_s3_bucket.s3_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 ########################################################################################
