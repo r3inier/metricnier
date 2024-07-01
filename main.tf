@@ -30,7 +30,7 @@ resource "aws_iam_role_policy_attachment" "attach_iam_policy_to_iam_role" {
 
 resource "aws_lambda_function" "lambda_func" {
 filename                       = "${path.module}/python/zips/hello-python.zip"
-function_name                  = "Test_Lambda"
+function_name                  = "health_export"
 role                           = aws_iam_role.lambda_role.arn
 handler                        = "index.lambda_handler"
 runtime                        = "python3.11"
@@ -39,6 +39,27 @@ depends_on                     = [aws_iam_role_policy_attachment.attach_iam_poli
 
 ########################################################################################
 # API Gateway
+
+resource "aws_api_gateway_api_key" "api_key" {
+  name        = "metricnier_api_key"
+  description = "Metricnier API Key"
+  enabled     = true
+}
+
+resource "aws_api_gateway_usage_plan" "usage_key" {
+  name = "metricnier_usage_plan"
+
+  api_stages {
+    api_id = aws_api_gateway_rest_api.api_metricnier.id
+    stage  = aws_api_gateway_stage.stage.stage_name
+  }
+}
+
+resource "aws_api_gateway_usage_plan_key" "api_key_plan" {
+  key_id        = aws_api_gateway_api_key.api_key.id
+  key_type      = "API_KEY"
+  usage_plan_id = aws_api_gateway_usage_plan.usage_key.id
+}
 
 resource "aws_api_gateway_rest_api" "api_metricnier" {
   name = "api_metricnier"
@@ -55,26 +76,31 @@ resource "aws_api_gateway_resource" "root" {
   path_part = "health-export"
 }
 
-resource "aws_api_gateway_method" "proxy" {
+resource "aws_api_gateway_method" "health_export_method" {
   rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
   resource_id = aws_api_gateway_resource.root.id
   http_method = "ANY"
   authorization = "NONE"
+  api_key_required = true
+
+  request_parameters = {
+    "method.request.header.x-api-key" = true
+  }
 }
 
 resource "aws_api_gateway_integration" "lambda_integration" {
   rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
   resource_id = aws_api_gateway_resource.root.id
-  http_method = aws_api_gateway_method.proxy.http_method
+  http_method = aws_api_gateway_method.health_export_method.http_method
   integration_http_method = "ANY"
   type = "AWS"
   uri = aws_lambda_function.lambda_func.invoke_arn
 }
 
-resource "aws_api_gateway_method_response" "proxy" {
+resource "aws_api_gateway_method_response" "health_export_method" {
   rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
   resource_id = aws_api_gateway_resource.root.id
-  http_method = aws_api_gateway_method.proxy.http_method
+  http_method = aws_api_gateway_method.health_export_method.http_method
   status_code = "200"
 
   response_parameters = {
@@ -84,11 +110,11 @@ resource "aws_api_gateway_method_response" "proxy" {
   }
 }
 
-resource "aws_api_gateway_integration_response" "proxy" {
+resource "aws_api_gateway_integration_response" "health_export_method" {
   rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
   resource_id = aws_api_gateway_resource.root.id
-  http_method = aws_api_gateway_method.proxy.http_method
-  status_code = aws_api_gateway_method_response.proxy.status_code
+  http_method = aws_api_gateway_method.health_export_method.http_method
+  status_code = aws_api_gateway_method_response.health_export_method.status_code
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" =  "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
@@ -97,9 +123,15 @@ resource "aws_api_gateway_integration_response" "proxy" {
   }
 
   depends_on = [
-    aws_api_gateway_method.proxy,
+    aws_api_gateway_method.health_export_method,
     aws_api_gateway_integration.lambda_integration
   ]
+}
+
+resource "aws_api_gateway_stage" "stage" {
+  deployment_id = aws_api_gateway_deployment.deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.api_metricnier.id
+  stage_name    = "default"
 }
 
 resource "aws_api_gateway_deployment" "deployment" {
@@ -108,7 +140,6 @@ resource "aws_api_gateway_deployment" "deployment" {
   ]
 
   rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
-  stage_name = "default"
 }
 
 resource "aws_lambda_permission" "apigw_lambda" {
