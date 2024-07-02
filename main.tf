@@ -1,9 +1,8 @@
-# Lambda Function
-
 provider "aws" {
   region = "ap-southeast-2"
 }
 
+# Creating IAM role 
 resource "aws_iam_role" "lambda_role" {
 name   = "Lambda_Role"
 assume_role_policy = <<EOF
@@ -41,6 +40,16 @@ resource "aws_iam_policy" "lambda_s3_policy" {
   })
 }
 
+resource "aws_lambda_permission" "apigw_lambda" {
+  statement_id = "AllowExecutionFromAPIGateway"
+  action = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.ingest_health.function_name
+  principal = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.api_metricnier.execution_arn}/*"
+}
+
+# Policy attachments
 resource "aws_iam_role_policy_attachment" "attach_iam_policy_to_iam_role" {
  role        = aws_iam_role.lambda_role.name
  policy_arn  = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -51,33 +60,27 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attachment" {
   policy_arn = aws_iam_policy.lambda_s3_policy.arn
 }
 
-resource "aws_lambda_permission" "apigw_lambda" {
-  statement_id = "AllowExecutionFromAPIGateway"
-  action = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.lambda_func.function_name
-  principal = "apigateway.amazonaws.com"
-
-  source_arn = "${aws_api_gateway_rest_api.api_metricnier.execution_arn}/*"
-}
-
-resource "aws_lambda_function" "lambda_func" {
-filename                       = "${path.module}/python/zips/hello-python.zip"
-function_name                  = "health_export"
+################################################################################################################################################################################
+# Lambda functions
+# 
+resource "aws_lambda_function" "ingest_health" {
+filename                       = "${path.module}/python/zips/ingest_health.zip"
+function_name                  = "ingest_health"
 role                           = aws_iam_role.lambda_role.arn
 handler                        = "index.lambda_handler"
 runtime                        = "python3.11"
 depends_on                     = [aws_iam_role_policy_attachment.attach_iam_policy_to_iam_role]
 }
 
-########################################################################################
-# API Gateway
-
+################################################################################################################################################################################
+# Creating API key
 resource "aws_api_gateway_api_key" "api_key" {
   name        = "metricnier_api_key"
   description = "Metricnier API Key"
   enabled     = true
 }
 
+# Creating usage plan
 resource "aws_api_gateway_usage_plan" "usage_key" {
   name = "metricnier_usage_plan"
 
@@ -87,12 +90,15 @@ resource "aws_api_gateway_usage_plan" "usage_key" {
   }
 }
 
+# Connecting API key and usage plan
 resource "aws_api_gateway_usage_plan_key" "api_key_plan" {
   key_id        = aws_api_gateway_api_key.api_key.id
   key_type      = "API_KEY"
   usage_plan_id = aws_api_gateway_usage_plan.usage_key.id
 }
 
+################################################################################################################################################################################
+# Creating API Gateway
 resource "aws_api_gateway_rest_api" "api_metricnier" {
   name = "api_metricnier"
   description = "API for Metricnier"
@@ -126,7 +132,7 @@ resource "aws_api_gateway_integration" "lambda_integration" {
   http_method = aws_api_gateway_method.health_export_method.http_method
   integration_http_method = "ANY"
   type = "AWS"
-  uri = aws_lambda_function.lambda_func.invoke_arn
+  uri = aws_lambda_function.ingest_health.invoke_arn
 }
 
 resource "aws_api_gateway_method_response" "health_export_method" {
@@ -174,7 +180,7 @@ resource "aws_api_gateway_deployment" "deployment" {
   rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
 }
 
-########################################################################################
+################################################################################################################################################################################
 # S3 Bucket
 resource "aws_s3_bucket" "s3_bucket" {
   bucket = "metricnier-bucket"
@@ -189,10 +195,10 @@ resource "aws_s3_bucket_public_access_block" "s3_bucket" {
   restrict_public_buckets = true
 }
 
-########################################################################################
+################################################################################################################################################################################
 # Data Sources
 data "archive_file" "lambda_package" {
   type = "zip"
-  source_file = "python/lambdas/hello-python/index.py"
-  output_path = "python/zips/hello-python.zip"
+  source_file = "python/lambdas/ingest_health/index.py"
+  output_path = "python/zips/ingest_health.zip"
 }
