@@ -10,8 +10,8 @@ An application that ingests data from commonly used softwares in my life.
 - Infrastructure Management: Terraform
 - Load: Lambda/API Gateway
 - Store: S3
-- Transform: dbt
-- Query: PowerBI
+- Transform: Lambda
+- Frontend/Query: React
 
 ## Architecture Diagram
 TBA
