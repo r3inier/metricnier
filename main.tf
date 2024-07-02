@@ -43,7 +43,7 @@ resource "aws_iam_policy" "lambda_s3_policy" {
 resource "aws_lambda_permission" "apigw_lambda" {
   statement_id = "AllowExecutionFromAPIGateway"
   action = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.ingest_health.function_name
+  function_name = aws_lambda_function.store_health_data.function_name
   principal = "apigateway.amazonaws.com"
 
   source_arn = "${aws_api_gateway_rest_api.api_metricnier.execution_arn}/*"
@@ -63,9 +63,9 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attachment" {
 ################################################################################################################################################################################
 # Lambda functions
 # 
-resource "aws_lambda_function" "ingest_health" {
-filename                       = "${path.module}/python/zips/ingest_health.zip"
-function_name                  = "ingest_health"
+resource "aws_lambda_function" "store_health_data" {
+filename                       = "${path.module}/python/zips/store_health_data.zip"
+function_name                  = "store_health_data"
 role                           = aws_iam_role.lambda_role.arn
 handler                        = "index.lambda_handler"
 runtime                        = "python3.11"
@@ -132,7 +132,7 @@ resource "aws_api_gateway_integration" "lambda_integration" {
   http_method = aws_api_gateway_method.health_export_method.http_method
   integration_http_method = "ANY"
   type = "AWS"
-  uri = aws_lambda_function.ingest_health.invoke_arn
+  uri = aws_lambda_function.store_health_data.invoke_arn
 }
 
 resource "aws_api_gateway_method_response" "health_export_method" {
@@ -199,6 +199,6 @@ resource "aws_s3_bucket_public_access_block" "s3_bucket" {
 # Data Sources
 data "archive_file" "lambda_package" {
   type = "zip"
-  source_file = "python/lambdas/ingest_health/index.py"
-  output_path = "python/zips/ingest_health.zip"
+  source_file = "python/lambdas/store_health_data/index.py"
+  output_path = "python/zips/store_health_data.zip"
 }
