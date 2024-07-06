@@ -171,10 +171,10 @@ resource "aws_api_gateway_stage" "stage" {
 
 # Deploying API Gateway
 resource "aws_api_gateway_deployment" "deployment" {
-  depends_on = [
-    aws_api_gateway_integration.lambda_health_integration,
-    aws_api_gateway_integration.lambda_spotify_integration
-  ]
-
   rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
+  stage_description = "Deployed at ${timestamp()}"
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
