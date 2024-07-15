@@ -26,7 +26,8 @@ resource "aws_iam_policy" "lambda_s3_policy" {
       {
         Action = [
           "s3:PutObject",
-          "s3:DeleteBucket"
+          "s3:DeleteBucket",
+          "s3:GetObject"
         ]
         Effect = "Allow"
         Resource = "${aws_s3_bucket.s3_bucket.arn}/*"
@@ -36,7 +37,7 @@ resource "aws_iam_policy" "lambda_s3_policy" {
 }
 
 # Policy attachments
-resource "aws_iam_role_policy_attachment" "attach_iam_policy_to_iam_role" {
+resource "aws_iam_role_policy_attachment" "lambda_basic_policy_attachment" {
  role        = aws_iam_role.lambda_role.name
  policy_arn  = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
