@@ -16,6 +16,8 @@ resource "aws_lambda_function" "store_health_data" {
   role                           = aws_iam_role.lambda_role.arn
   handler                        = "lambda.lambda_handler"
   runtime                        = "python3.11"
+  timeout                        = 900
+  memory_size                    = 256
   depends_on                     = [aws_iam_role_policy_attachment.lambda_basic_policy_attachment]
 }
 
@@ -26,6 +28,8 @@ resource "aws_lambda_function" "store_spotify_data" {
   role                           = aws_iam_role.lambda_role.arn
   handler                        = "lambda.lambda_handler"
   runtime                        = "python3.11"
+  timeout                        = 900
+  memory_size                    = 256
   depends_on                     = [aws_iam_role_policy_attachment.lambda_basic_policy_attachment]
 }
 
@@ -36,6 +40,8 @@ resource "aws_lambda_function" "transform_health_data" {
   role                           = aws_iam_role.lambda_role.arn
   handler                        = "lambda.lambda_handler"
   runtime                        = "python3.11"
+  timeout                        = 900
+  memory_size                    = 256
   depends_on                     = [
     aws_iam_role_policy_attachment.lambda_basic_policy_attachment,
     aws_iam_role_policy_attachment.lambda_s3_policy_attachment]
