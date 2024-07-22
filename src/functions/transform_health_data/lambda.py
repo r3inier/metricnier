@@ -33,7 +33,6 @@ def lambda_handler(event, context):
         Key=input_file
     )
     data = load_file_from_bucket(input_file)
-    add_file_to_bucket(output_file, data) # remove when done testing
     transform_data(automation_name, data) 
 
     return {
