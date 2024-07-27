@@ -9,3 +9,7 @@ terraform-apply:
 
 terraform-destroy:
 		cd terraform && terraform destroy
+
+# write makefile for destroying all Lambdas and re-uploading
+terraform-update-lambdas:
+	./src/scripts/terraform_update_lambdas.sh
