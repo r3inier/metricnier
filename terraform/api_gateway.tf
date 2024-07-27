@@ -93,7 +93,7 @@ EOF
 }
 
 
-# API & Lambda Spotify Integration 
+# API & Lambda Ingest Spotify Integration 
 resource "aws_api_gateway_resource" "ingest_spotify" {
   rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
   parent_id = aws_api_gateway_rest_api.api_metricnier.root_resource_id
@@ -139,17 +139,135 @@ resource "aws_api_gateway_integration_response" "ingest_spotify" {
 
   depends_on = [
     aws_api_gateway_method.ingest_spotify,
-    aws_api_gateway_integration.lambda_spotify_integration
+    aws_api_gateway_integration.lambda_ingest_spotify_integration
   ]
 }
 
-resource "aws_api_gateway_integration" "lambda_spotify_integration" {
+resource "aws_api_gateway_integration" "lambda_ingest_spotify_integration" {
   rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
   resource_id = aws_api_gateway_resource.ingest_spotify.id
   http_method = aws_api_gateway_method.ingest_spotify.http_method
   integration_http_method = "ANY"
   type = "AWS_PROXY"
   uri = aws_lambda_function.store_spotify_data.invoke_arn
+}
+
+# API & Lambda Authorise Spotify Integration 
+resource "aws_api_gateway_resource" "auth_spotify" {
+  rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
+  parent_id = aws_api_gateway_rest_api.api_metricnier.root_resource_id
+  path_part = "auth-spotify"
+}
+
+resource "aws_api_gateway_method" "auth_spotify" {
+  rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
+  resource_id = aws_api_gateway_resource.auth_spotify.id
+  http_method = "POST"
+  authorization = "NONE"
+  api_key_required = true
+
+  request_parameters = {
+    "method.request.header.x-api-key" = true
+  }
+}
+
+resource "aws_api_gateway_method_response" "auth_spotify" {
+  rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
+  resource_id = aws_api_gateway_resource.auth_spotify.id
+  http_method = aws_api_gateway_method.auth_spotify.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true,
+    "method.response.header.Access-Control-Allow-Methods" = true,
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "auth_spotify" {
+  rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
+  resource_id = aws_api_gateway_resource.auth_spotify.id
+  http_method = aws_api_gateway_method.auth_spotify.http_method
+  status_code = aws_api_gateway_method_response.auth_spotify.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" =  "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT'",
+    "method.response.header.Access-Control-Allow-Origin" = "'*'"
+  }
+
+  depends_on = [
+    aws_api_gateway_method.auth_spotify,
+    aws_api_gateway_integration.lambda_auth_spotify_integration
+  ]
+}
+
+resource "aws_api_gateway_integration" "lambda_auth_spotify_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
+  resource_id = aws_api_gateway_resource.auth_spotify.id
+  http_method = aws_api_gateway_method.auth_spotify.http_method
+  integration_http_method = "POST"
+  type = "AWS"
+  uri = aws_lambda_function.auth_spotify.invoke_arn
+}
+
+# API & Lambda Refresh Token Spotify Integration 
+resource "aws_api_gateway_resource" "refresh_token_spotify" {
+  rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
+  parent_id = aws_api_gateway_rest_api.api_metricnier.root_resource_id
+  path_part = "refresh-token-spotify"
+}
+
+resource "aws_api_gateway_method" "refresh_token_spotify" {
+  rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
+  resource_id = aws_api_gateway_resource.refresh_token_spotify.id
+  http_method = "GET"
+  authorization = "NONE"
+  api_key_required = true
+
+  request_parameters = {
+    "method.request.header.x-api-key" = true
+  }
+}
+
+resource "aws_api_gateway_method_response" "refresh_token_spotify" {
+  rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
+  resource_id = aws_api_gateway_resource.refresh_token_spotify.id
+  http_method = aws_api_gateway_method.refresh_token_spotify.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true,
+    "method.response.header.Access-Control-Allow-Methods" = true,
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "refresh_token_spotify" {
+  rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
+  resource_id = aws_api_gateway_resource.refresh_token_spotify.id
+  http_method = aws_api_gateway_method.refresh_token_spotify.http_method
+  status_code = aws_api_gateway_method_response.refresh_token_spotify.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" =  "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT'",
+    "method.response.header.Access-Control-Allow-Origin" = "'*'"
+  }
+
+  depends_on = [
+    aws_api_gateway_method.refresh_token_spotify,
+    aws_api_gateway_integration.lambda_refresh_token_spotify_integration
+  ]
+}
+
+resource "aws_api_gateway_integration" "lambda_refresh_token_spotify_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
+  resource_id = aws_api_gateway_resource.refresh_token_spotify.id
+  http_method = aws_api_gateway_method.refresh_token_spotify.http_method
+  integration_http_method = "GET"
+  type = "AWS"
+  uri = aws_lambda_function.refresh_token_spotify.invoke_arn
 }
 
 # Creating API Gateway

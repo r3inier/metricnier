@@ -4,6 +4,18 @@ variable "transform_health_files" {
   default = ["lambda.py", "helper.py", "health_metrics.py", "workouts.py"]
 }
 
+data "archive_file" "lambda_auth_spotify_package" {
+  type = "zip"
+  source_file = "../src/functions/auth_spotify/lambda.py"
+  output_path = "../src/zips/auth_spotify.zip"
+}
+
+data "archive_file" "lambda_refresh_token_spotify_package" {
+  type = "zip"
+  source_file = "../src/functions/refresh_token_spotify/lambda.py"
+  output_path = "../src/zips/refresh_token_spotify.zip"
+}
+
 data "archive_file" "lambda_store_health_package" {
   type = "zip"
   source_file = "../src/functions/store_health_data/lambda.py"
