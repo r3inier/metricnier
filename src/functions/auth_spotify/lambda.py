@@ -3,8 +3,7 @@ import boto3
 
 def lambda_handler(event, context):
     # TO DO:
-    # - create Spotify client
-    # - store session data into S3
+    # - store session data into S3 (initial storage)
 
     return {
        'statusCode' : 200,
