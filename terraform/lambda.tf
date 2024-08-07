@@ -21,8 +21,6 @@ resource "aws_lambda_function" "auth_spotify" {
   role                           = aws_iam_role.lambda_role.arn
   handler                        = "lambda.lambda_handler"
   runtime                        = "python3.11"
-  # timeout                        = 900
-  # memory_size                    = 256
   depends_on                     = [aws_iam_role_policy_attachment.lambda_basic_policy_attachment]
 }
 
@@ -33,8 +31,6 @@ resource "aws_lambda_function" "refresh_token_spotify" {
   role                           = aws_iam_role.lambda_role.arn
   handler                        = "lambda.lambda_handler"
   runtime                        = "python3.11"
-  # timeout                        = 900
-  # memory_size                    = 256
   depends_on                     = [aws_iam_role_policy_attachment.lambda_basic_policy_attachment]
 }
 
