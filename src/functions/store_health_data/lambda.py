@@ -3,7 +3,7 @@ import boto3
 
 def lambda_handler(event, context):
     bucket_name = "metricnier-bucket"
-    automation_name = event.get('automation-name', 'X')
+    automation_name = event.get('automation-name', 'N/A')
     
     s3 = boto3.resource('s3')
     s3_object = ""

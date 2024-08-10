@@ -87,11 +87,10 @@ resource "aws_api_gateway_integration" "lambda_health_integration" {
 {
   "body" : $input.json('$'),
   "automation-name" : "$util.escapeJavaScript($input.params().header.get('automation-name'))"
-}
+} 
 EOF
   }
 }
-
 
 # API & Lambda Ingest Spotify Integration 
 resource "aws_api_gateway_resource" "ingest_spotify" {
@@ -147,8 +146,8 @@ resource "aws_api_gateway_integration" "lambda_ingest_spotify_integration" {
   rest_api_id = aws_api_gateway_rest_api.api_metricnier.id
   resource_id = aws_api_gateway_resource.ingest_spotify.id
   http_method = aws_api_gateway_method.ingest_spotify.http_method
-  integration_http_method = "ANY"
-  type = "AWS_PROXY"
+  integration_http_method = "POST"
+  type = "AWS"
   uri = aws_lambda_function.store_spotify_data.invoke_arn
 }
 
