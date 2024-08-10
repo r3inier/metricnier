@@ -15,6 +15,7 @@ client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
 redirect_uri = os.getenv('SPOTIFY_REDIRECT_URI')
 apigw_url = os.getenv('SPOTIFY_AUTH_API_GATEWAY_ENDPOINT')
 apigw_key = os.getenv('SPOTIFY_AUTH_API_GATEWAY_KEY')
+s3_bucket = os.getenv('S3_BUCKET_NAME')
 
 sp_oauth = SpotifyOAuth(client_id=client_id,
     client_secret=client_secret,
@@ -36,21 +37,22 @@ except Exception as e:
 print("Sending access and refresh tokens to AWS API Gateway endpoint...")
 
 response = requests.post(apigw_url,
-    data = {
-        "info": "Sending access and refresh tokens for Spotify authorisation"
+    json = {
+        "info": "Sending access and refresh tokens for Spotify authorisation",
+        "bucket-name": s3_bucket,
+        "access-token": access_token,
+        "refresh-token": refresh_token,
+        "client-id": client_id,
+        "client-secret": client_secret,
+        "redirect-uri": redirect_uri
     },
     headers = {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
         "x-api-key": apigw_key,
         "Content-Type": "application/json"
     })
 
-# print(response.json())
-
-#TO DO:
-# - create proper response text from AWS side
-# print("Awaiting response from AWS...")
+print("AWS Endpoint response:")
+print(response.text)
 
 os.remove(f"{main_dir}/.cache")
 
