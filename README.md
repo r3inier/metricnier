@@ -15,3 +15,6 @@ An application that ingests data from commonly used softwares in my life.
 
 ## Architecture Diagram
 TBA
+
+## Notes
+- There is a "variables.tf" located in the "terraform" directory that should be created locally for the "aws_s3_bucket" resource.
