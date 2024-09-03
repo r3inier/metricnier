@@ -6,7 +6,7 @@ variable "transform_health_files" {
 
 data "archive_file" "lambda_auth_spotify_package" {
   type = "zip"
-  source_file = "../src/functions/auth_spotify/lambda.py"
+  source_dir = "../src/functions/auth_spotify"
   output_path = "../src/zips/auth_spotify.zip"
 }
 

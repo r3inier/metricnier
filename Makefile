@@ -5,6 +5,7 @@ terraform-plan:
 		cd terraform && terraform plan
 
 terraform-apply:
+		cd src/functions/auth_spotify && pip install -r requirements.txt -t .
 		cd terraform && terraform apply -auto-approve
 		
 terraform-destroy:
